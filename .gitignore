@@ -1,0 +1,26 @@
+# Секреты и Базы данных
+.env
+users.db
+
+# Тяжелые ML модели (комиссия сама их сгенерирует или ты приложишь ссылку)
+models/*.pkl
+
+# Окружение Python
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Фронтенд (React/Vite)
+node_modules/
+dist/
+.eslintcache
+
+# Системные файлы
+.DS_Store
+
+# Датасеты и сырые данные
+*.csv
+*.tsv
+data/
+dataset/

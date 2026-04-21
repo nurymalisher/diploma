@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #060A0F;
+  --surface:    #0C1219;
+  --surface2:   #111920;
+  --border:     #1A2535;
+  --border2:    #243347;
+  --accent:     #00D4AA;
+  --accent2:    #00A87D;
+  --accent-dim: rgba(0,212,170,.1);
+  --gold:       #FFB800;
+  --red:        #FF4757;
+  --text:       #C8D8E8;
+  --text2:      #7A96B0;
+  --text3:      #3D566E;
+  --white:      #EDF2F7;
+  --radius:     8px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,170,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,170,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+
+/* Glow */
+body::after {
+  content: '';
+  position: fixed;
+  top: -20%; left: -10%;
+  width: 55%; height: 65%;
+  background: radial-gradient(ellipse, rgba(0,212,170,.05) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+input { font-family: inherit; }
+img { display: block; max-width: 100%; }
+
+/* Utilities */
+.flex   { display: flex; }
+.flex-1 { flex: 1; }
+.center { align-items: center; justify-content: center; }
+.gap-sm { gap: .5rem; }
+.gap-md { gap: 1rem; }
+.mono   { font-family: 'JetBrains Mono', monospace; }
+.muted  { color: var(--text2); }
+.accent { color: var(--accent); }

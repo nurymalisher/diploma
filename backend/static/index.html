@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GameRec — Рекомендации Steam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060A0F;
+  --surface:#0C1219;
+  --surface2:#111920;
+  --border:#1A2535;
+  --border2:#243347;
+  --accent:#00D4AA;
+  --accent2:#00A87D;
+  --accent-dim:rgba(0,212,170,.12);
+  --gold:#FFB800;
+  --red:#FF4757;
+  --text:#C8D8E8;
+  --text2:#7A96B0;
+  --text3:#3D566E;
+  --white:#EDF2F7;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Grid background */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,170,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,170,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';
+  position:fixed;
+  top:-20%;left:-10%;
+  width:50%;height:60%;
+  background:radial-gradient(ellipse,rgba(0,212,170,.06) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* HEADER */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,10,15,.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.hdr{
+  max-width:1320px;margin:0 auto;
+  padding:0 1.5rem;
+  height:56px;
+  display:flex;align-items:center;gap:2rem;
+}
+.logo{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:500;font-size:1rem;
+  color:var(--white);
+  letter-spacing:-.02em;
+  display:flex;align-items:center;gap:.5rem;
+  text-decoration:none;
+}
+.logo-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent);
+}
+.hdr-nav{display:flex;align-items:center;gap:.25rem;flex:1}
+.hdr-nav-btn{
+  background:none;border:none;
+  color:var(--text2);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:.85rem;font-weight:500;
+  padding:.35rem .85rem;border-radius:6px;
+  cursor:pointer;transition:all .15s;
+}
+.hdr-nav-btn:hover{color:var(--text);background:var(--surface)}
+.hdr-nav-btn.active{color:var(--accent);background:var(--accent-dim)}
+.hdr-right{display:flex;align-items:center;gap:.75rem;margin-left:auto}
+.avatar-sm{
+  width:30px;height:30px;
+  border-radius:6px;
+  border:1px solid var(--border2);
+  object-fit:cover;
+}
+.username-sm{font-size:.85rem;color:var(--text2)}
+.btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.45rem 1.1rem;border-radius:7px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:.85rem;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  border:none;text-decoration:none;
+}
+.btn-accent{background:var(--accent);color:#060A0F}
+.btn-accent:hover{background:#00eabf;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,170,.3)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:.3rem .8rem;font-size:.78rem}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(255,71,87,.3);font-size:.78rem;padding:.3rem .8rem}
+.btn-danger:hover{background:rgba(255,71,87,.1)}
+
+/* MAIN */
+main{max-width:1320px;margin:0 auto;padding:1.5rem}
+.page{display:none}
+.page.active{display:block}
+
+/* HERO */
+.hero{
+  padding:5rem 0 4rem;
+  text-align:center;
+  position:relative;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--accent-dim);
+  border:1px solid rgba(0,212,170,.2);
+  border-radius:20px;
+  padding:.3rem .9rem;
+  font-size:.78rem;color:var(--accent);
+  font-family:'JetBrains Mono',monospace;
+  margin-bottom:2rem;
+}
+.hero h1{
+  font-size:clamp(2.2rem,5vw,3.8rem);
+  font-weight:700;
+  line-height:1.1;
+  letter-spacing:-.04em;
+  color:var(--white);
+  margin-bottom:1.2rem;
+}
+.hero h1 em{
+  font-style:normal;
+  color:var(--accent);
+}
+.hero p{
+  color:var(--text2);
+  font-size:1rem;
+  max-width:480px;
+  margin:0 auto 2.5rem;
+}
+.steam-login-btn{
+  display:inline-flex;align-items:center;gap:.75rem;
+  padding:.8rem 2rem;
+  background:linear-gradient(135deg,#1b2838 0%,#2a475e 100%);
+  border:1px solid #4c6b8a;
+  border-radius:10px;
+  color:#c6d4df;
+  text-decoration:none;
+  font-weight:600;font-size:.95rem;
+  transition:all .25s;
+}
+.steam-login-btn:hover{
+  border-color:var(--accent);
+  color:var(--white);
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(0,212,170,.2);
+}
+.steam-login-btn svg{width:22px;height:22px;flex-shrink:0}
+
+/* DIVIDER */
+.divider{
+  display:flex;align-items:center;gap:1rem;
+  margin:2.5rem 0;color:var(--text3);font-size:.8rem;
+  font-family:'JetBrains Mono',monospace;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;
+  height:1px;background:var(--border);
+}
+
+/* SECTION */
+.section-hdr{
+  display:flex;align-items:center;gap:.75rem;
+  margin-bottom:1.25rem;
+}
+.section-title{
+  font-size:1rem;font-weight:600;
+  color:var(--white);letter-spacing:-.02em;
+}
+.section-count{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.75rem;color:var(--text3);
+  background:var(--surface2);
+  padding:.2rem .5rem;border-radius:4px;
+}
+.section-line{flex:1;height:1px;background:var(--border)}
+
+/* CARDS GRID */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(185px,1fr));
+  gap:.875rem;
+}
+
+/* GAME CARD */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+}
+.card:hover{
+  border-color:var(--border2);
+  background:var(--surface2);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.card-img{
+  width:100%;
+  aspect-ratio:460/215;
+  object-fit:cover;
+  display:block;
+  background:var(--surface2);
+}
+.card-img-ph{
+  width:100%;
+  aspect-ratio:460/215;
+  background:linear-gradient(135deg,var(--surface2),var(--border));
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text3);font-size:.7rem;
+  font-family:'JetBrains Mono',monospace;
+}
+.card-body{padding:.6rem .75rem .75rem}
+.card-name{
+  font-size:.82rem;font-weight:600;
+  color:var(--white);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:.3rem;
+}
+.card-row{display:flex;justify-content:space-between;align-items:center}
+.card-price{font-size:.75rem;color:var(--accent);font-weight:600}
+.card-reviews{font-size:.7rem;color:var(--text3)}
+.card-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.4rem}
+.tag{
+  font-size:.62rem;padding:.1rem .4rem;
+  background:rgba(0,212,170,.08);
+  color:var(--accent2);
+  border-radius:3px;
+  font-weight:500;
+}
+.card-score{
+  position:absolute;top:.5rem;right:.5rem;
+  background:rgba(6,10,15,.9);
+  border:1px solid var(--border2);
+  border-radius:4px;padding:.15rem .4rem;
+  font-size:.68rem;color:var(--accent);
+  font-family:'JetBrains Mono',monospace;
+  backdrop-filter:blur(4px);
+}
+
+/* PROFILE BAR */
+.profile-bar{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:.875rem 1.25rem;
+  margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:1rem;
+}
+.profile-avatar{
+  width:42px;height:42px;
+  border-radius:8px;
+  border:1.5px solid var(--border2);
+  object-fit:cover;flex-shrink:0;
+}
+.profile-name{
+  font-weight:600;font-size:.95rem;
+  color:var(--white);
+}
+.profile-meta{
+  font-size:.78rem;color:var(--text2);
+  margin-top:.1rem;
+  font-family:'JetBrains Mono',monospace;
+}
+.profile-meta span{margin-right:1.2rem}
+
+/* STATS */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:.75rem;
+  margin-bottom:1.5rem;
+}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:.875rem 1rem;
+}
+.stat-val{
+  font-family:'JetBrains Mono',monospace;
+  font-size:1.6rem;font-weight:500;
+  color:var(--accent);line-height:1;
+}
+.stat-lbl{
+  font-size:.72rem;color:var(--text2);
+  margin-top:.2rem;text-transform:uppercase;
+  letter-spacing:.05em;
+}
+
+/* TABS */
+.tabs{
+  display:flex;gap:.25rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:1.25rem;
+}
+.tab{
+  padding:.5rem 1rem;
+  border-radius:6px 6px 0 0;
+  cursor:pointer;font-size:.83rem;
+  color:var(--text2);
+  background:transparent;border:none;
+  font-family:'Space Grotesk',sans-serif;
+  transition:all .15s;
+  position:relative;bottom:-1px;
+  border:1px solid transparent;
+  border-bottom:none;
+}
+.tab:hover{color:var(--text)}
+.tab.active{
+  color:var(--accent);
+  background:var(--surface);
+  border-color:var(--border);
+  border-bottom-color:var(--surface);
+}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:1.25rem}
+.search-ico{
+  position:absolute;left:.875rem;top:50%;
+  transform:translateY(-50%);
+  color:var(--text3);pointer-events:none;
+}
+.search-inp{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:.65rem .875rem .65rem 2.5rem;
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:.88rem;
+  outline:none;transition:border-color .15s;
+}
+.search-inp:focus{border-color:var(--accent2)}
+.search-inp::placeholder{color:var(--text3)}
+
+/* SEARCH DROPDOWN */
+.search-dropdown{
+  position:absolute;top:100%;left:0;right:0;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-top:none;
+  border-radius:0 0 8px 8px;
+  z-index:50;
+  overflow:hidden;
+  max-height:320px;overflow-y:auto;
+}
+.search-item{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.55rem .875rem;
+  cursor:pointer;
+  transition:background .1s;
+  border-bottom:1px solid var(--border);
+}
+.search-item:last-child{border-bottom:none}
+.search-item:hover{background:var(--accent-dim)}
+.search-item-img{
+  width:72px;height:34px;
+  border-radius:4px;object-fit:cover;
+  background:var(--border);flex-shrink:0;
+}
+.search-item-name{font-size:.83rem;font-weight:500;color:var(--white)}
+.search-item-meta{font-size:.72rem;color:var(--text2)}
+.search-item-add{
+  margin-left:auto;font-size:.72rem;
+  color:var(--accent);font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  flex-shrink:0;
+}
+
+/* PICKED CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;min-height:28px}
+.chip{
+  display:inline-flex;align-items:center;gap:.35rem;
+  background:var(--accent-dim);
+  border:1px solid rgba(0,212,170,.2);
+  border-radius:20px;
+  padding:.25rem .65rem;
+  font-size:.78rem;color:var(--accent);
+}
+.chip-x{
+  background:none;border:none;
+  color:var(--accent);cursor:pointer;
+  font-size:.9rem;line-height:1;opacity:.6;
+}
+.chip-x:hover{opacity:1}
+
+/* MODAL */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.8);
+  z-index:200;
+  display:flex;align-items:center;
+  justify-content:center;
+  padding:1rem;
+  backdrop-filter:blur(6px);
+}
+.modal{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:14px;
+  width:100%;max-width:520px;
+  max-height:88vh;overflow-y:auto;
+}
+.modal-hdr{
+  padding:1.25rem 1.5rem .875rem;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  border-bottom:1px solid var(--border);
+}
+.modal-title{font-weight:700;font-size:1rem;color:var(--white);line-height:1.3}
+.modal-close{
+  background:none;border:none;
+  color:var(--text2);cursor:pointer;
+  font-size:1.2rem;line-height:1;
+  margin-left:.75rem;flex-shrink:0;
+}
+.modal-close:hover{color:var(--white)}
+.modal-body{padding:1.25rem 1.5rem}
+.modal-img{
+  width:100%;border-radius:8px;
+  aspect-ratio:460/215;object-fit:cover;
+  background:var(--surface2);
+  margin-bottom:1rem;
+  display:block;
+}
+.modal-meta{
+  display:flex;gap:1.5rem;flex-wrap:wrap;
+  margin-bottom:1rem;
+  font-size:.82rem;
+}
+.modal-meta-item{color:var(--text2)}
+.modal-meta-item b{color:var(--white)}
+.modal-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.5rem}
+
+/* STAR RATING */
+.stars{display:flex;gap:.25rem}
+.star{
+  background:none;border:none;
+  font-size:1.1rem;cursor:pointer;
+  color:var(--border2);
+  transition:color .1s,transform .1s;
+  line-height:1;
+}
+.star.active,.star:hover{color:var(--gold);transform:scale(1.15)}
+
+/* ACTION BTNS */
+.action-btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.4rem .9rem;border-radius:6px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:.78rem;font-weight:600;
+  cursor:pointer;transition:all .15s;
+  border:1px solid var(--border2);
+  background:transparent;color:var(--text2);
+}
+.action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.action-btn.active{
+  background:var(--accent-dim);
+  border-color:rgba(0,212,170,.3);
+  color:var(--accent);
+}
+.action-btn.active-wish{
+  background:rgba(255,184,0,.08);
+  border-color:rgba(255,184,0,.3);
+  color:var(--gold);
+}
+
+/* SIMILAR */
+.similar-title{
+  font-size:.75rem;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.08em;
+  margin-bottom:.75rem;font-weight:600;
+}
+.similar-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:.5rem;
+}
+
+/* SPINNER */
+.spinner{
+  display:inline-block;
+  width:18px;height:18px;
+  border:2px solid var(--border2);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .65s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{
+  display:flex;align-items:center;
+  justify-content:center;gap:.75rem;
+  padding:3rem;color:var(--text2);
+}
+
+/* EMPTY */
+.empty{
+  text-align:center;padding:3rem;
+  color:var(--text3);
+}
+.empty svg{margin-bottom:.75rem;opacity:.25}
+
+/* ANON PANEL */
+.anon-panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:1.25rem;
+  margin-bottom:1.5rem;
+}
+.anon-desc{
+  font-size:.85rem;color:var(--text2);
+  margin-bottom:1rem;
+}
+
+/* TOAST */
+#toasts{
+  position:fixed;bottom:1.25rem;right:1.25rem;
+  z-index:9999;
+  display:flex;flex-direction:column;gap:.4rem;
+}
+.toast{
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  padding:.65rem 1rem;
+  font-size:.82rem;color:var(--text);
+  animation:fadeIn .25s ease;
+  max-width:300px;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+}
+.toast.ok{border-left:3px solid var(--accent)}
+.toast.err{border-left:3px solid var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateX(20px)}}
+
+@media(max-width:640px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  main{padding:1rem}
+  .hdr-nav{display:none}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toasts"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback} = React;
+
+// ── utils ─────────────────────────────────────────────────────────────────────
+const api = {
+  get:  url => fetch(url).then(r=>r.json()),
+  post: (url,body) => fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}).then(r=>r.json()),
+  del:  url => fetch(url,{method:'DELETE'}).then(r=>r.json()),
+};
+function toast(msg,type='ok'){
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+const fmt = {
+  price: (p,free) => free ? 'Бесплатно' : p ? `$${p}` : '—',
+  rev:   r => r>=1000 ? `${(r/1000).toFixed(1)}k` : r||'—',
+  score: s => s ? `${(s*100).toFixed(0)}%` : '',
+};
+
+// ── SteamIcon ─────────────────────────────────────────────────────────────────
+const SteamIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.606 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.455 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z"/>
+  </svg>
+);
+
+// ── GameCard ──────────────────────────────────────────────────────────────────
+function GameCard({game, onClick, showScore=true}){
+  return (
+    <div className="card" onClick={()=>onClick&&onClick(game)}>
+      {game.header_image
+        ? <img className="card-img" src={game.header_image} alt={game.name} loading="lazy" onError={e=>e.target.style.display='none'}/>
+        : <div className="card-img-ph">NO IMAGE</div>
+      }
+      {showScore && game.score && <div className="card-score">{fmt.score(game.score)}</div>}
+      <div className="card-body">
+        <div className="card-name" title={game.name}>{game.name}</div>
+        <div className="card-row">
+          <span className="card-price">{fmt.price(game.price_usd, game.is_free)}</span>
+          <span className="card-reviews">{fmt.rev(game.recommendations)}</span>
+        </div>
+        {game.genres?.length > 0 &&
+          <div className="card-tags">
+            {game.genres.slice(0,3).map(g=><span key={g} className="tag">{g}</span>)}
+          </div>
+        }
+      </div>
+    </div>
+  );
+}
+
+// ── StarRating ────────────────────────────────────────────────────────────────
+function StarRating({current, onChange}){
+  const [hover,setHover]=useState(0);
+  return (
+    <div className="stars">
+      {[1,2,3,4,5].map(n=>(
+        <button key={n} className={`star ${(hover||current)>=n?'active':''}`}
+          onMouseEnter={()=>setHover(n)}
+          onMouseLeave={()=>setHover(0)}
+          onClick={()=>onChange(n)}>★</button>
+      ))}
+    </div>
+  );
+}
+
+// ── GameModal ─────────────────────────────────────────────────────────────────
+function GameModal({game, user, onClose}){
+  const [similar,setSimilar]=useState([]);
+  const [loadSim,setLoadSim]=useState(true);
+  const [status,setStatus]=useState({rating:null,favorite:false,wishlist:false});
+
+  useEffect(()=>{
+    if(!game) return;
+    // Track view
+    if(user) api.post(`/game/${game.appid}/view`);
+    // Load similar
+    api.get(`/similar/${game.appid}?top_n=6`)
+      .then(d=>{setSimilar(d.similar||[]);setLoadSim(false)})
+      .catch(()=>setLoadSim(false));
+    // Load status if logged in
+    if(user){
+      api.get(`/game/${game.appid}/status`)
+        .then(d=>setStatus(d))
+        .catch(()=>{});
+    }
+  },[game?.appid]);
+
+  if(!game) return null;
+
+  const handleRate = async(n)=>{
+    if(!user){toast('Войдите через Steam','err');return;}
+    if(status.rating===n){
+      await api.del(`/game/${game.appid}/rate`);
+      setStatus(s=>({...s,rating:null}));
+      toast('Оценка удалена');
+    } else {
+      await api.post(`/game/${game.appid}/rate`,{rating:n});
+      setStatus(s=>({...s,rating:n}));
+      toast(`Оценка ${n}★ сохранена`);
+    }
+  };
+
+  const handleFav = async()=>{
+    if(!user){toast('Войдите через Steam','err');return;}
+    if(status.favorite){
+      await api.del(`/game/${game.appid}/favorite`);
+      setStatus(s=>({...s,favorite:false}));
+      toast('Убрано из избранного');
+    } else {
+      await api.post(`/game/${game.appid}/favorite`);
+      setStatus(s=>({...s,favorite:true}));
+      toast('Добавлено в избранное');
+    }
+  };
+
+  const handleWish = async()=>{
+    if(!user){toast('Войдите через Steam','err');return;}
+    if(status.wishlist){
+      await api.del(`/game/${game.appid}/wishlist`);
+      setStatus(s=>({...s,wishlist:false}));
+      toast('Убрано из вишлиста');
+    } else {
+      await api.post(`/game/${game.appid}/wishlist`);
+      setStatus(s=>({...s,wishlist:true}));
+      toast('Добавлено в "Играть позже"');
+    }
+  };
+
+  return (
+    <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+      <div className="modal">
+        <div className="modal-hdr">
+          <div className="modal-title">{game.name}</div>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          {game.header_image &&
+            <img className="modal-img" src={game.header_image} alt={game.name}/>
+          }
+          <div className="modal-meta">
+            <div className="modal-meta-item"><b>{fmt.price(game.price_usd,game.is_free)}</b></div>
+            {game.recommendations>0 && <div className="modal-meta-item"><b>{fmt.rev(game.recommendations)}</b> отзывов</div>}
+            {game.metacritic>0 && <div className="modal-meta-item">MC: <b>{game.metacritic}</b></div>}
+            {game.score && <div className="modal-meta-item">Score: <b style={{color:'var(--accent)'}}>{fmt.score(game.score)}</b></div>}
+          </div>
+
+          {game.genres?.length>0 &&
+            <div className="card-tags" style={{marginBottom:'1rem'}}>
+              {game.genres.map(g=><span key={g} className="tag">{g}</span>)}
+            </div>
+          }
+
+          <div className="modal-actions">
+            <a className="btn btn-accent btn-sm" href={game.store_url} target="_blank" rel="noreferrer">
+              Открыть в Steam
+            </a>
+            <button className={`action-btn ${status.favorite?'active':''}`} onClick={handleFav}>
+              {status.favorite ? '♥ В избранном' : '♡ Избранное'}
+            </button>
+            <button className={`action-btn ${status.wishlist?'active-wish':''}`} onClick={handleWish}>
+              {status.wishlist ? '★ Вишлист' : '☆ Играть позже'}
+            </button>
+          </div>
+
+          {user && (
+            <div style={{marginBottom:'1.25rem'}}>
+              <div style={{fontSize:'.75rem',color:'var(--text2)',marginBottom:'.5rem',textTransform:'uppercase',letterSpacing:'.05em'}}>Ваша оценка</div>
+              <StarRating current={status.rating||0} onChange={handleRate}/>
+            </div>
+          )}
+
+          {/* Похожие */}
+          <div className="similar-title">Похожие игры</div>
+          {loadSim
+            ? <div className="loading"><div className="spinner"/></div>
+            : similar.length>0
+              ? <div className="similar-grid">
+                  {similar.map(g=>(
+                    <div key={g.appid} className="card" style={{cursor:'pointer'}} onClick={()=>window.open(g.store_url,'_blank')}>
+                      {g.header_image
+                        ? <img className="card-img" src={g.header_image} alt={g.name} loading="lazy"/>
+                        : <div className="card-img-ph">—</div>
+                      }
+                      <div className="card-body">
+                        <div className="card-name" style={{fontSize:'.72rem'}}>{g.name}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              : <div style={{color:'var(--text3)',fontSize:'.82rem'}}>Не найдено</div>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── AnonPage ──────────────────────────────────────────────────────────────────
+function AnonPage(){
+  const [q,setQ]=useState('');
+  const [results,setResults]=useState([]);
+  const [picked,setPicked]=useState([]);
+  const [recs,setRecs]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [loadRecs,setLoadRecs]=useState(false);
+  const [modal,setModal]=useState(null);
+  const debRef=useRef(null);
+
+  useEffect(()=>{
+    if(q.length<2){setResults([]);return;}
+    clearTimeout(debRef.current);
+    debRef.current=setTimeout(()=>{
+      setLoading(true);
+      api.get(`/search?q=${encodeURIComponent(q)}&limit=8`)
+        .then(d=>{setResults(d.results||[]);setLoading(false)})
+        .catch(()=>setLoading(false));
+    },320);
+  },[q]);
+
+  const add=(g)=>{
+    if(picked.find(p=>p.appid===g.appid)){toast('Уже добавлено','err');return;}
+    if(picked.length>=8){toast('Максимум 8 игр','err');return;}
+    setPicked(p=>[...p,g]);
+    setQ('');setResults([]);
+  };
+  const remove=(id)=>setPicked(p=>p.filter(x=>x.appid!==id));
+
+  const getRecs=()=>{
+    if(!picked.length){toast('Добавь хотя бы одну игру','err');return;}
+    setLoadRecs(true);
+    api.post('/recommendations/anon',{owned_games:picked.map(g=>({appid:g.appid,playtime_hours:50})),top_n:24})
+      .then(d=>{setRecs(d.recommendations||[]);setLoadRecs(false)})
+      .catch(()=>setLoadRecs(false));
+  };
+
+  return (
+    <div>
+      <div className="anon-panel">
+        <div className="section-hdr">
+          <div className="section-title">Рекомендации без входа</div>
+        </div>
+        <p className="anon-desc">Выбери игры которые тебе нравятся — система подберёт похожие</p>
+
+        <div className="search-wrap" style={{marginBottom:'.75rem'}}>
+          <span className="search-ico">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </span>
+          <input className="search-inp" placeholder="Поиск игры..." value={q} onChange={e=>setQ(e.target.value)}/>
+          {(results.length>0||loading) &&
+            <div className="search-dropdown">
+              {loading && <div style={{padding:'.75rem 1rem',color:'var(--text3)',fontSize:'.8rem'}}>Поиск...</div>}
+              {results.map(g=>(
+                <div key={g.appid} className="search-item" onClick={()=>add(g)}>
+                  {g.header_image
+                    ? <img className="search-item-img" src={g.header_image} alt=""/>
+                    : <div className="search-item-img" style={{background:'var(--border)'}}/>
+                  }
+                  <div>
+                    <div className="search-item-name">{g.name}</div>
+                    <div className="search-item-meta">{g.genres?.slice(0,2).join(', ')}</div>
+                  </div>
+                  <span className="search-item-add">+ Add</span>
+                </div>
+              ))}
+            </div>
+          }
+        </div>
+
+        <div className="chips">
+          {picked.map(g=>(
+            <span key={g.appid} className="chip">
+              {g.name}
+              <button className="chip-x" onClick={()=>remove(g.appid)}>×</button>
+            </span>
+          ))}
+        </div>
+
+        <button className="btn btn-accent" onClick={getRecs} disabled={loadRecs||!picked.length}>
+          {loadRecs ? <><div className="spinner" style={{width:14,height:14,borderWidth:2}}/> Загрузка...</> : 'Получить рекомендации'}
+        </button>
+      </div>
+
+      {recs.length>0 &&
+        <>
+          <div className="section-hdr">
+            <div className="section-title">Рекомендации</div>
+            <div className="section-count">{recs.length}</div>
+            <div className="section-line"/>
+          </div>
+          <div className="grid">
+            {recs.map(g=><GameCard key={g.appid} game={g} onClick={setModal}/>)}
+          </div>
+        </>
+      }
+      {modal && <GameModal game={modal} user={null} onClose={()=>setModal(null)}/>}
+    </div>
+  );
+}
+
+// ── UserPage ──────────────────────────────────────────────────────────────────
+function UserPage({user}){
+  const [tab,setTab]=useState('recs');
+  const [recs,setRecs]=useState([]);
+  const [recentRecs,setRecentRecs]=useState([]);
+  const [favs,setFavs]=useState([]);
+  const [wishlist,setWishlist]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [modal,setModal]=useState(null);
+  const [filter,setFilter]=useState('');
+
+  useEffect(()=>{
+    setLoading(true);
+    Promise.all([
+      api.get('/recommendations?top_n=40'),
+      api.get('/recommendations/recent?top_n=20'),
+      api.get('/my/favorites'),
+      api.get('/my/wishlist'),
+    ]).then(([r,rec,fv,wl])=>{
+      setRecs(r.recommendations||[]);
+      setRecentRecs(rec.recommendations||[]);
+      setFavs(fv.favorites||[]);
+      setWishlist(wl.wishlist||[]);
+      setLoading(false);
+    }).catch(()=>setLoading(false));
+  },[]);
+
+  const tabData = {
+    recs:    recs.filter(g=>!filter||g.name.toLowerCase().includes(filter.toLowerCase())),
+    recent:  recentRecs,
+    favs:    favs,
+    wishlist:wishlist,
+  };
+  const current = tabData[tab]||[];
+
+  const logout=()=>fetch('/auth/logout').then(()=>window.location.reload());
+
+  return (
+    <div>
+      {/* Profile */}
+      <div className="profile-bar">
+        {user.avatar
+          ? <img className="profile-avatar" src={user.avatar} alt={user.username}/>
+          : <div className="profile-avatar" style={{background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text3)'}}>?</div>
+        }
+        <div style={{flex:1}}>
+          <div className="profile-name">{user.username||'Пользователь'}</div>
+          <div className="profile-meta">
+            {user.library?.total_games && <span>{user.library.total_games.toLocaleString()} игр</span>}
+            {user.library?.matched_in_db && <span>В базе: {user.library.matched_in_db.toLocaleString()}</span>}
+          </div>
+        </div>
+        <button className="btn-danger btn" onClick={logout}>Выйти</button>
+      </div>
+
+      {/* Stats */}
+      <div className="stats">
+        <div className="stat"><div className="stat-val">{recs.length}</div><div className="stat-lbl">Рекомендаций</div></div>
+        <div className="stat"><div className="stat-val">{user.library?.total_games||'—'}</div><div className="stat-lbl">Игр в Steam</div></div>
+        <div className="stat"><div className="stat-val">{favs.length}</div><div className="stat-lbl">Избранное</div></div>
+        <div className="stat"><div className="stat-val">{wishlist.length}</div><div className="stat-lbl">Вишлист</div></div>
+      </div>
+
+      {/* Tabs */}
+      <div className="tabs">
+        {[['recs','Рекомендации'],['recent','Недавние'],['favs','Избранное'],['wishlist','Вишлист']].map(([k,l])=>(
+          <button key={k} className={`tab ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
+        ))}
+      </div>
+
+      {tab==='recs' &&
+        <div className="search-wrap">
+          <span className="search-ico">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </span>
+          <input className="search-inp" placeholder="Фильтр по названию..." value={filter} onChange={e=>setFilter(e.target.value)}/>
+        </div>
+      }
+
+      {loading
+        ? <div className="loading"><div className="spinner" style={{width:28,height:28,borderWidth:3}}/><span>Загружаем рекомендации...</span></div>
+        : current.length>0
+          ? <div className="grid">
+              {current.map(g=><GameCard key={g.appid} game={g} onClick={setModal} showScore={tab==='recs'||tab==='recent'}/>)}
+            </div>
+          : <div className="empty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <p>{tab==='recent'?'Нет активности за 2 недели':tab==='favs'?'Избранное пусто':tab==='wishlist'?'Вишлист пуст':'Ничего не найдено'}</p>
+            </div>
+      }
+
+      {modal && <GameModal game={modal} user={user} onClose={()=>{setModal(null);}}/>}
+    </div>
+  );
+}
+
+// ── HeroPage ──────────────────────────────────────────────────────────────────
+function HeroPage(){
+  return (
+    <div>
+      <div className="hero">
+        <div className="hero-badge">
+          <span>●</span> ML-powered · Steam интеграция
+        </div>
+        <h1>Игры которые<br/><em>тебе понравятся</em></h1>
+        <p>Войди через Steam — система изучит твою библиотеку и подберёт игры специально для тебя</p>
+        <a className="steam-login-btn" href="/auth/steam">
+          <SteamIcon/> Войти через Steam
+        </a>
+      </div>
+      <div className="divider">или получи рекомендации без входа</div>
+      <AnonPage/>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+function App(){
+  const [user,setUser]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [page,setPage]=useState('home');
+
+  useEffect(()=>{
+    api.get('/me')
+      .then(d=>{if(d.steamid){setUser(d);setPage('dashboard');}setLoading(false);})
+      .catch(()=>setLoading(false));
+  },[]);
+
+  if(loading) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
+      <div className="spinner" style={{width:36,height:36,borderWidth:3}}/>
+    </div>
+  );
+
+  return (
+    <>
+      <header>
+        <div className="hdr">
+          <a className="logo" href="#" onClick={e=>{e.preventDefault();setPage(user?'dashboard':'home')}}>
+            <span className="logo-dot"/>GameRec
+          </a>
+          {user &&
+            <div className="hdr-nav">
+              <button className={`hdr-nav-btn ${page==='dashboard'?'active':''}`} onClick={()=>setPage('dashboard')}>Рекомендации</button>
+              <button className={`hdr-nav-btn ${page==='anon'?'active':''}`} onClick={()=>setPage('anon')}>Без входа</button>
+            </div>
+          }
+          <div className="hdr-right">
+            {user
+              ? <>
+                  {user.avatar && <img className="avatar-sm" src={user.avatar} alt=""/>}
+                  <span className="username-sm">{user.username}</span>
+                </>
+              : <a className="btn btn-accent btn-sm" href="/auth/steam">Войти</a>
+            }
+          </div>
+        </div>
+      </header>
+      <main>
+        {page==='home' && <HeroPage/>}
+        {page==='dashboard' && user && <UserPage user={user}/>}
+        {page==='anon' && <AnonPage/>}
+      </main>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
