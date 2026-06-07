@@ -30,6 +30,7 @@ class HybridRecommender:
         self.anon_beta = 0.00
         self.anon_gamma = 0.50
         self.apps_meta = None
+        self.search_items = []
 
     def load(self):
         ensure_models_downloaded()
@@ -81,6 +82,27 @@ class HybridRecommender:
             self.anon_gamma = float(w.get("anon_gamma", 0.50))
 
         self.apps_meta = joblib.load(MODELS_DIR / "apps_meta.pkl")
+        self.search_items = []
+
+        for appid, row in self.apps_meta.iterrows():
+            name = str(row.get("name", ""))
+
+            if not name or name.lower() == "nan":
+                continue
+
+            self.search_items.append({
+                "appid": int(appid),
+                "name": name,
+                "name_lower": name.lower(),
+                "header_image": row.get("header_image"),
+                "is_free": bool(row.get("is_free", False)),
+                "price_usd": self._cents_to_usd(row.get("mat_final_price")),
+                "recommendations": int(row.get("recommendations_total") or 0),
+                "metacritic": row.get("metacritic_score"),
+                "store_url": f"https://store.steampowered.com/app/{appid}",
+            })
+
+        print(f"🔎 Search index loaded: {len(self.search_items)} games")
 
     def get_recommendations(self, owned_games, steamid=None, top_n=20, min_reviews=50, exclude_free=False,
                             db_weights=None):
