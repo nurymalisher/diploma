@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
+from .download_models import ensure_models_downloaded
 
 # Путь к моделям относительно корня проекта
 MODELS_DIR = Path("models")
@@ -31,8 +32,11 @@ class HybridRecommender:
         self.apps_meta = None
 
     def load(self):
+        ensure_models_downloaded()
+
         d = joblib.load(MODELS_DIR / "tfidf.pkl")
         self.vectorizer = d["vectorizer"]
+
         self.tfidf_matrix = d["tfidf_matrix"]
         self.tfidf_appids = d["appids"]
         self.tfidf_idx = {a: i for i, a in enumerate(self.tfidf_appids)}

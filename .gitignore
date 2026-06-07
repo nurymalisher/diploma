@@ -25,3 +25,14 @@ dist/
 data/
 dataset/
 *.pkl
+
+.env
+backend/models/
+backend/models_backup/
+test_*.pkl
+*.db
+*.sqlite
+__pycache__/
+.venv/
+node_modules/
+frontend/dist/
