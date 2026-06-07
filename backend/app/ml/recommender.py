@@ -21,9 +21,13 @@ class HybridRecommender:
         self.item_to_appid = {}
         self.embeddings = None
         self.appid_to_emb = {}
-        self.alpha = 0.33
-        self.beta = 0.33
-        self.gamma = 0.34
+        self.auth_alpha = 0.33
+        self.auth_beta = 0.33
+        self.auth_gamma = 0.34
+
+        self.anon_alpha = 0.50
+        self.anon_beta = 0.00
+        self.anon_gamma = 0.50
         self.apps_meta = None
 
     def load(self):
@@ -46,7 +50,32 @@ class HybridRecommender:
         self.appid_to_emb = d["appid_to_idx"]
 
         w = joblib.load(MODELS_DIR / "hybrid_weights.pkl")
-        self.alpha, self.beta, self.gamma = w["alpha"], w["beta"], w["gamma"]
+
+        # Новый формат весов:
+        # {
+        #   "auth": {"alpha": ..., "beta": ..., "gamma": ...},
+        #   "anon": {"alpha": ..., "beta": ..., "gamma": ...}
+        # }
+        if "auth" in w and "anon" in w:
+            self.auth_alpha = float(w["auth"]["alpha"])
+            self.auth_beta = float(w["auth"]["beta"])
+            self.auth_gamma = float(w["auth"]["gamma"])
+
+            self.anon_alpha = float(w["anon"]["alpha"])
+            self.anon_beta = float(w["anon"]["beta"])
+            self.anon_gamma = float(w["anon"]["gamma"])
+
+        # Старый формат оставляем для совместимости:
+        # {"alpha": ..., "beta": ..., "gamma": ...}
+        else:
+            self.auth_alpha = float(w["alpha"])
+            self.auth_beta = float(w["beta"])
+            self.auth_gamma = float(w["gamma"])
+
+            self.anon_alpha = float(w.get("anon_alpha", 0.50))
+            self.anon_beta = float(w.get("anon_beta", 0.00))
+            self.anon_gamma = float(w.get("anon_gamma", 0.50))
+
         self.apps_meta = joblib.load(MODELS_DIR / "apps_meta.pkl")
 
     def get_recommendations(self, owned_games, steamid=None, top_n=20, min_reviews=50, exclude_free=False,
@@ -56,23 +85,41 @@ class HybridRecommender:
         owned = {int(g["appid"]) for g in owned_games}
         scores = {}
 
-        for rank, appid in enumerate(self._tfidf_top(owned_games, owned)):
-            scores[appid] = scores.get(appid, 0) + self.alpha / (rank + 1)
+        use_svd = steamid is not None and str(steamid) in self.user_to_idx
 
-        if steamid and str(steamid) in self.user_to_idx:
+        if use_svd:
+            alpha = self.auth_alpha
+            beta = self.auth_beta
+            gamma = self.auth_gamma
+        else:
+            alpha = self.anon_alpha
+            beta = self.anon_beta
+            gamma = self.anon_gamma
+
+        for rank, appid in enumerate(self._tfidf_top(owned_games, owned)):
+            scores[appid] = scores.get(appid, 0) + alpha / (rank + 1)
+
+        if use_svd:
             for rank, appid in enumerate(self._svd_top(steamid, owned)):
-                scores[appid] = scores.get(appid, 0) + self.beta / (rank + 1)
+                scores[appid] = scores.get(appid, 0) + beta / (rank + 1)
 
         for rank, appid in enumerate(self._emb_top(owned_games, owned)):
-            scores[appid] = scores.get(appid, 0) + self.gamma / (rank + 1)
+            scores[appid] = scores.get(appid, 0) + gamma / (rank + 1)
 
         results = []
         for appid, score in scores.items():
-            if appid not in self.apps_meta.index: continue
+            if appid not in self.apps_meta.index:
+                continue
+
             game = self.apps_meta.loc[appid]
             rec_total = game.get("recommendations_total") or 0
-            if rec_total < min_reviews: continue
-            if exclude_free and bool(game.get("is_free", False)): continue
+
+            if rec_total < min_reviews:
+                continue
+
+            if exclude_free and bool(game.get("is_free", False)):
+                continue
+
             results.append({
                 "appid": int(appid),
                 "name": game.get("name", "Unknown"),

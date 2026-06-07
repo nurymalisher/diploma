@@ -127,39 +127,11 @@ def load_data():
     else:
         apps["categories_text"] = ""
 
-    # Расширенное текстовое поле для TF-IDF.
-    # Помимо описания, жанров и категорий добавляем разработчиков, издателей,
-    # теги и платформы, если такие колонки есть в apps_clean.csv.
-    # Это помогает TF-IDF лучше находить игры одного издателя/разработчика
-    # или игры с похожими Steam-тегами.
-    extra_text_cols = [
-        "developers",
-        "developer",
-        "publishers",
-        "publisher",
-        "steamspy_tags",
-        "tags",
-        "platforms",
-        "supported_languages"
-    ]
-
-    for col in extra_text_cols:
-        if col not in apps.columns:
-            apps[col] = ""
-
     apps["content"] = (
         apps["short_description"].fillna("") + " " +
         apps["genres_text"].fillna("") + " " +
-        apps["categories_text"].fillna("") + " " +
-        apps["developers"].fillna("") + " " +
-        apps["developer"].fillna("") + " " +
-        apps["publishers"].fillna("") + " " +
-        apps["publisher"].fillna("") + " " +
-        apps["steamspy_tags"].fillna("") + " " +
-        apps["tags"].fillna("") + " " +
-        apps["platforms"].fillna("") + " " +
-        apps["supported_languages"].fillna("")
-    ).str.replace(r"[\[\]\{\}\(\)'\"]", " ", regex=True).str.strip()
+        apps["categories_text"].fillna("")
+    ).str.strip()
 
     apps = apps.drop_duplicates(subset=["appid"]).set_index("appid")
     print(f"  Игр: {len(apps):,}")
@@ -252,11 +224,11 @@ def train_tfidf(apps: pd.DataFrame):
     t0 = time.time()
 
     vectorizer = TfidfVectorizer(
-        max_features=80_000,
+        max_features=50_000,
         stop_words="english",
         ngram_range=(1, 2),
-        min_df=2,
-        max_df=0.90,
+        min_df=3,
+        max_df=0.85,
         sublinear_tf=True,
         norm="l2",
         dtype=np.float32,

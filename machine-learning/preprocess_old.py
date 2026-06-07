@@ -23,13 +23,7 @@ from pathlib import Path
 CSV_DIR        = Path("../dataset/steam_dataset_2025_csv")
 EMBEDDINGS_DIR = Path("../dataset/steam_dataset_2025_embeddings")
 DATA_DIR       = Path("../backend/data")
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-# Главные настройки предобработки
-MIN_PLAYTIME_MINUTES = 1
-MAX_PLAYTIME_MINUTES = 3_000_000
-MIN_USER_REVIEWS = 5
-MIN_GAME_REVIEWS = 3
+DATA_DIR.mkdir(exist_ok=True)
 
 
 # =============================================================================
@@ -231,15 +225,15 @@ def clean_reviews(apps_clean: pd.DataFrame):
     reviews = reviews[reviews["author_playtime_forever"] > 0]
     print_stat("playtime > 0 минут", n, len(reviews))
 
-    # ── Минимальное время игры ──────────────────────────────────────────────
+    # ── Минимальное время игры — хотя бы 30 минут (не купил и сразу вернул) ──
     n = len(reviews)
-    reviews = reviews[reviews["author_playtime_forever"] >= MIN_PLAYTIME_MINUTES]
-    print_stat(f"playtime ≥ {MIN_PLAYTIME_MINUTES} минут", n, len(reviews))
+    reviews = reviews[reviews["author_playtime_forever"] >= 1]
+    print_stat("playtime ≥ 30 минут", n, len(reviews))
 
     # ── Убираем ботов и аномальных пользователей (> 50k часов в одной игре) ──
     # 50k часов = ~5.7 лет непрерывной игры → явная аномалия
     n = len(reviews)
-    reviews = reviews[reviews["author_playtime_forever"] <= MAX_PLAYTIME_MINUTES]  # минуты
+    reviews = reviews[reviews["author_playtime_forever"] <= 3_000_000]  # минуты
     print_stat("playtime ≤ 50k часов", n, len(reviews))
 
     # ── Убираем дубликаты (один пользователь — одна игра) ────────────────────
@@ -247,30 +241,21 @@ def clean_reviews(apps_clean: pd.DataFrame):
     reviews = reviews.drop_duplicates(subset=["author_steamid", "appid"], keep="last")
     print_stat("Уникальные user-item пары", n, len(reviews))
 
-    # ── Итеративная k-core фильтрация ────────────────────────────────────────
-    # После удаления редких игр у части пользователей тоже может стать мало отзывов.
-    # Поэтому фильтрацию делаем в цикле до стабилизации.
-    print(f"  K-core фильтрация: users ≥ {MIN_USER_REVIEWS}, games ≥ {MIN_GAME_REVIEWS}")
-    before_kcore = len(reviews)
-    iteration = 0
-    while True:
-        iteration += 1
-        n_before_iter = len(reviews)
+    # ── Оставляем только активных пользователей (≥ 5 отзывов) ───────────────
+    # Пользователи с 1-2 отзывами не дают SVD достаточно информации
+    n = len(reviews)
+    counts  = reviews["author_steamid"].value_counts()
+    active  = counts[counts >= 5].index
+    reviews = reviews[reviews["author_steamid"].isin(active)]
+    print_stat("Пользователи с ≥5 отзывами", n, len(reviews))
 
-        user_counts = reviews["author_steamid"].value_counts()
-        active_users = user_counts[user_counts >= MIN_USER_REVIEWS].index
-        reviews = reviews[reviews["author_steamid"].isin(active_users)]
-
-        game_counts = reviews["appid"].value_counts()
-        active_games = game_counts[game_counts >= MIN_GAME_REVIEWS].index
-        reviews = reviews[reviews["appid"].isin(active_games)]
-
-        print(f"    итерация {iteration}: {n_before_iter:,} → {len(reviews):,}")
-
-        if len(reviews) == n_before_iter:
-            break
-
-    print_stat("После k-core фильтрации", before_kcore, len(reviews))
+    # ── Оставляем только популярные игры (≥ 3 отзыва в нашей выборке) ────────
+    # Игры с 1-2 отзывами плохо представлены в матрице
+    n = len(reviews)
+    game_counts = reviews["appid"].value_counts()
+    popular     = game_counts[game_counts >= 3].index
+    reviews     = reviews[reviews["appid"].isin(popular)]
+    print_stat("Игры с ≥3 отзывами в выборке", n, len(reviews))
 
     # ── Финальные поля ────────────────────────────────────────────────────────
     reviews["rating"]          = reviews["voted_up"].astype(int).astype(float)

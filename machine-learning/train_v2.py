@@ -41,7 +41,7 @@ N_TEST_USERS = 300
 MIN_LIKED = 20
 SVD_COMPONENTS = 100
 NEGATIVE_WEIGHT = 0.0
-OFFLINE_ONLY_REVIEW_ITEMS = False
+OFFLINE_ONLY_REVIEW_ITEMS = True
 
 
 def top_indices(scores: np.ndarray, top_n: int, exclude_idx=None):
@@ -127,39 +127,11 @@ def load_data():
     else:
         apps["categories_text"] = ""
 
-    # Расширенное текстовое поле для TF-IDF.
-    # Помимо описания, жанров и категорий добавляем разработчиков, издателей,
-    # теги и платформы, если такие колонки есть в apps_clean.csv.
-    # Это помогает TF-IDF лучше находить игры одного издателя/разработчика
-    # или игры с похожими Steam-тегами.
-    extra_text_cols = [
-        "developers",
-        "developer",
-        "publishers",
-        "publisher",
-        "steamspy_tags",
-        "tags",
-        "platforms",
-        "supported_languages"
-    ]
-
-    for col in extra_text_cols:
-        if col not in apps.columns:
-            apps[col] = ""
-
     apps["content"] = (
         apps["short_description"].fillna("") + " " +
         apps["genres_text"].fillna("") + " " +
-        apps["categories_text"].fillna("") + " " +
-        apps["developers"].fillna("") + " " +
-        apps["developer"].fillna("") + " " +
-        apps["publishers"].fillna("") + " " +
-        apps["publisher"].fillna("") + " " +
-        apps["steamspy_tags"].fillna("") + " " +
-        apps["tags"].fillna("") + " " +
-        apps["platforms"].fillna("") + " " +
-        apps["supported_languages"].fillna("")
-    ).str.replace(r"[\[\]\{\}\(\)'\"]", " ", regex=True).str.strip()
+        apps["categories_text"].fillna("")
+    ).str.strip()
 
     apps = apps.drop_duplicates(subset=["appid"]).set_index("appid")
     print(f"  Игр: {len(apps):,}")
@@ -252,11 +224,11 @@ def train_tfidf(apps: pd.DataFrame):
     t0 = time.time()
 
     vectorizer = TfidfVectorizer(
-        max_features=80_000,
+        max_features=50_000,
         stop_words="english",
         ngram_range=(1, 2),
-        min_df=2,
-        max_df=0.90,
+        min_df=3,
+        max_df=0.85,
         sublinear_tf=True,
         norm="l2",
         dtype=np.float32,
@@ -528,139 +500,6 @@ def print_and_save_report(m_tfidf, m_svd, m_emb, m_hybrid, weights_data, k=10):
 
     report.to_csv(MODELS_DIR / "metrics_report.csv", index=False)
     print(f"\n→ {MODELS_DIR / 'metrics_report.csv'}")
-    sampled_path = MODELS_DIR / "metrics_report_sampled.csv"
-    if sampled_path.exists():
-        print(f"→ {sampled_path}")
-
-
-
-
-# =============================================================================
-# ДОПОЛНИТЕЛЬНАЯ ОЦЕНКА — SAMPLED EVALUATION
-# =============================================================================
-
-def sample_negative_candidates(all_appids, relevant, seen, n_neg=100, rng=None):
-    rng = rng or np.random.default_rng(RANDOM_STATE)
-    forbidden = set(map(int, relevant)) | set(map(int, seen))
-    pool = np.array([int(a) for a in all_appids if int(a) not in forbidden], dtype=int)
-    if len(pool) <= n_neg:
-        return pool.tolist()
-    return rng.choice(pool, size=n_neg, replace=False).astype(int).tolist()
-
-
-def filter_recs_to_allowed(recs, allowed, k):
-    allowed = set(map(int, allowed))
-    result = []
-    used = set()
-    for appid in recs:
-        appid = int(appid)
-        if appid in allowed and appid not in used:
-            result.append(appid)
-            used.add(appid)
-        if len(result) >= k:
-            break
-    return result
-
-
-def evaluate_model_sampled(get_recs_fn, test_users, candidate_appids, k=10, n_neg=100):
-    rng = np.random.default_rng(RANDOM_STATE)
-    p_list, r_list, n_list = [], [], []
-
-    for user_case in tqdm(test_users, desc="  Sampled оценка", leave=False):
-        uid = user_case["uid"]
-        train_games = user_case["train_games"]
-        test_games = list(map(int, user_case["test_games"]))
-        seen = {int(g["appid"]) for g in train_games}
-
-        negatives = sample_negative_candidates(candidate_appids, test_games, seen, n_neg=n_neg, rng=rng)
-        allowed = set(test_games) | set(negatives)
-
-        recs_all = get_recs_fn(uid, train_games, top_n=5000)
-        recs = filter_recs_to_allowed(recs_all, allowed, k)
-
-        p_list.append(precision_at_k(recs, test_games, k))
-        r_list.append(recall_at_k(recs, test_games, k))
-        n_list.append(ndcg_at_k(recs, test_games, k))
-
-    return {
-        f"Precision@{k}": round(float(np.mean(p_list)), 4) if p_list else 0.0,
-        f"Recall@{k}": round(float(np.mean(r_list)), 4) if r_list else 0.0,
-        f"NDCG@{k}": round(float(np.mean(n_list)), 4) if n_list else 0.0,
-    }
-
-
-def evaluate_hybrid_sampled(test_users, tfidf_recs, svd_recs, emb_recs, weights, candidate_appids, k=10, n_neg=100):
-    rng = np.random.default_rng(RANDOM_STATE)
-    p_list, r_list, n_list = [], [], []
-
-    for user_case in tqdm(test_users, desc="  Sampled Hybrid", leave=False):
-        uid = user_case["uid"]
-        train_games = user_case["train_games"]
-        test_games = list(map(int, user_case["test_games"]))
-        seen = {int(g["appid"]) for g in train_games}
-
-        negatives = sample_negative_candidates(candidate_appids, test_games, seen, n_neg=n_neg, rng=rng)
-        allowed = set(test_games) | set(negatives)
-
-        cb = tfidf_recs(uid, train_games, top_n=5000)
-        sv = svd_recs(uid, train_games, top_n=5000)
-        em = emb_recs(uid, train_games, top_n=5000)
-
-        recs_all = merge_ranked_lists(cb, sv, em, weights, top_n=5000, exclude=seen)
-        recs = filter_recs_to_allowed(recs_all, allowed, k)
-
-        p_list.append(precision_at_k(recs, test_games, k))
-        r_list.append(recall_at_k(recs, test_games, k))
-        n_list.append(ndcg_at_k(recs, test_games, k))
-
-    return {
-        f"Precision@{k}": round(float(np.mean(p_list)), 4) if p_list else 0.0,
-        f"Recall@{k}": round(float(np.mean(r_list)), 4) if r_list else 0.0,
-        f"NDCG@{k}": round(float(np.mean(n_list)), 4) if n_list else 0.0,
-    }
-
-
-def run_sampled_evaluation(test_users, reviews, tfidf_recs, svd_recs, emb_recs, weights_data, k=10):
-    print("\n" + "=" * 60)
-    print("STEP 6.1 — Sampled evaluation")
-    print("=" * 60)
-    print("  Кандидаты: test items + 100 random negative items")
-
-    candidate_appids = list(map(int, reviews["appid"].unique()))
-
-    print("\n  Sampled TF-IDF...")
-    sm_tfidf = evaluate_model_sampled(tfidf_recs, test_users, candidate_appids, k=k, n_neg=100)
-    print(f"    {sm_tfidf}")
-
-    print("  Sampled SVD...")
-    sm_svd = evaluate_model_sampled(svd_recs, test_users, candidate_appids, k=k, n_neg=100)
-    print(f"    {sm_svd}")
-
-    print("  Sampled Embeddings...")
-    sm_emb = evaluate_model_sampled(emb_recs, test_users, candidate_appids, k=k, n_neg=100)
-    print(f"    {sm_emb}")
-
-    print("  Sampled Hybrid...")
-    auth = weights_data["auth"]
-    weights = (auth["alpha"], auth["beta"], auth["gamma"])
-    sm_hybrid = evaluate_hybrid_sampled(test_users, tfidf_recs, svd_recs, emb_recs, weights, candidate_appids, k=k, n_neg=100)
-    print(f"    {sm_hybrid}")
-
-    sampled_report = pd.DataFrame({
-        "Модель": ["TF-IDF (Content-Based)", "SVD (Collaborative)", "Embeddings (Semantic)", "Hybrid"],
-        f"Precision@{k}": [sm_tfidf[f"Precision@{k}"], sm_svd[f"Precision@{k}"], sm_emb[f"Precision@{k}"], sm_hybrid[f"Precision@{k}"]],
-        f"Recall@{k}": [sm_tfidf[f"Recall@{k}"], sm_svd[f"Recall@{k}"], sm_emb[f"Recall@{k}"], sm_hybrid[f"Recall@{k}"]],
-        f"NDCG@{k}": [sm_tfidf[f"NDCG@{k}"], sm_svd[f"NDCG@{k}"], sm_emb[f"NDCG@{k}"], sm_hybrid[f"NDCG@{k}"]],
-    })
-
-    sampled_path = MODELS_DIR / "metrics_report_sampled.csv"
-    sampled_report.to_csv(sampled_path, index=False)
-
-    print("\nSAMPLED REPORT:")
-    print(sampled_report.to_string(index=False))
-    print(f"\n→ {sampled_path}")
-
-    return sampled_report
 
 
 if __name__ == "__main__":
@@ -673,7 +512,7 @@ if __name__ == "__main__":
     print(f"  SVD_COMPONENTS = {SVD_COMPONENTS}")
     print(f"  NEGATIVE_WEIGHT = {NEGATIVE_WEIGHT}")
     print(f"  OFFLINE_ONLY_REVIEW_ITEMS = {OFFLINE_ONLY_REVIEW_ITEMS}")
-    train_reviews, test_users = make_offline_split(reviews, n_users=N_TEST_USERS, min_liked=MIN_LIKED, test_ratio=0.2)
+    train_reviews, test_users = make_offline_split(reviews, n_users=N_TEST_USERS, min_liked=10, test_ratio=0.2)
 
     tfidf_data = train_tfidf(apps)
 
@@ -699,8 +538,6 @@ if __name__ == "__main__":
 
     weights_data = find_optimal_weights(test_users, tfidf_recs, svd_recs, emb_recs, k=K, top_n=TOP_N)
     m_hybrid = weights_data["metrics"]
-
-    run_sampled_evaluation(test_users, reviews, tfidf_recs, svd_recs, emb_recs, weights_data, k=K)
 
     # Финальную модель для приложения обучаем на всех данных.
     final_svd_data = train_svd(reviews, n_components=SVD_COMPONENTS, label="Финальная SVD для сохранения")
