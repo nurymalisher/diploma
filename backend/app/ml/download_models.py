@@ -7,11 +7,11 @@ import time
 MODELS_DIR = Path("models")
 
 MODEL_URLS = {
-    "tfidf.pkl": "https://huggingface.co/syrymalisher/steam-game-recommender-models/resolve/main/tfidf.pkl",
-    "svd.pkl": "https://huggingface.co/syrymalisher/steam-game-recommender-models/resolve/main/svd.pkl",
-    "embeddings.pkl": "https://huggingface.co/syrymalisher/steam-game-recommender-models/resolve/main/embeddings.pkl",
-    "hybrid_weights.pkl": "https://huggingface.co/syrymalisher/steam-game-recommender-models/resolve/main/hybrid_weights.pkl",
-    "apps_meta.pkl": "https://huggingface.co/syrymalisher/steam-game-recommender-models/resolve/main/apps_meta.pkl",
+    "tfidf.pkl": "https://huggingface.co/kiojack/steam-game-recommender-models/resolve/main/tfidf.pkl",
+    "svd.pkl": "https://huggingface.co/kiojack/steam-game-recommender-models/resolve/main/svd.pkl",
+    "embeddings.pkl": "https://huggingface.co/kiojack/steam-game-recommender-models/resolve/main/embeddings.pkl",
+    "hybrid_weights.pkl": "https://huggingface.co/kiojack/steam-game-recommender-models/resolve/main/hybrid_weights.pkl",
+    "apps_meta.pkl": "https://huggingface.co/kiojack/steam-game-recommender-models/resolve/main/apps_meta.pkl",
 }
 
 
